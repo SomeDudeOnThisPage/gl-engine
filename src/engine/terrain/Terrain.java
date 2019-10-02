@@ -1,64 +1,107 @@
 package engine.terrain;
 
 import engine.core.Camera;
-import engine.core.GameObject;
+import engine.core.scene.GameObject;
 import engine.core.gfx.Shader;
+import engine.core.gfx.VertexArray;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-
-import static org.lwjgl.opengl.GL11C.*;
+import java.util.ArrayList;
 
 public class Terrain extends GameObject
 {
-  private TerrainChunk[] chunks;
-  private int size;
+  private VertexArray vao;
   private Shader shader;
   private BufferedImage heightmap;
 
-  private BufferedImage splitHeightmap(int x, int y)
-  {
-    return this.heightmap.getSubimage(x * 16, y * 16, 17, 17);
-  }
+  private int size;
+  private int baseLOD;
+
+  private ArrayList<TerrainChunk> chunks;
+  private ArrayList<Node> traversed;
+  private TerrainChunk root;
 
   @Override
   public void render(Camera camera)
   {
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
-
-    for (TerrainChunk chunk:chunks)
+    this.shader.setCamera(camera);
+    for (Node chunk:this.traversed)
     {
-      this.shader.setUniform("projection", camera.getProjection());
-      this.shader.setUniform("view", camera.getView());
+      TerrainChunk current = (TerrainChunk) chunk;
+      if (!chunk.subdivided())
+      {
+        int[] indices = current.getIndices();
+        if (indices != null)
+        {
+          this.shader.setUniform("model", new Matrix4f().identity());
+          this.shader.setUniform("col", current.color);
 
-      Vector2f position = chunk.getPosition();
-      this.shader.setUniform("model", new Matrix4f().identity().translate(position.x, 0.0f, position.y));
+          this.vao.setIndices(current.getIndices());
 
-      this.shader.bind();
-      chunk.getVAO().render();
+          this.shader.bind();
+          this.vao.render();
+        }
+      }
     }
-    this.shader.unbind();
 
-    glDisable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    this.shader.unbind();
   }
 
   @Override
   public void update()
   {
-    // maybe some sort of real-time vertex terrain editing idk
+    this.traversed.clear();
+    this.root.traverse(this.traversed);
+  }
+
+  public void updateQuadTree(Camera camera)
+  {
+    float RADIUS = 50.0f;
+
+    for (Node chunk:this.traversed)
+    {
+      TerrainChunk current = (TerrainChunk) chunk;
+
+      // get distance to camera
+      Vector2f position_quad_2d = current.getCenter();
+      Vector3f position_quad = new Vector3f(-position_quad_2d.x, camera.getPosition().y, -position_quad_2d.y);
+
+      // get distance of parent to camera
+      float distance_parent = 0.0f;
+      TerrainChunk parent = (TerrainChunk) current.getParent();
+      if (parent != null)
+      {
+        Vector2f position_quad_parent_2d = parent.getCenter();
+        Vector3f position_quad_parent = new Vector3f(-position_quad_parent_2d.x, camera.getPosition().y, -position_quad_parent_2d.y);
+        distance_parent = position_quad_parent.distance(camera.getPosition());
+      }
+
+      float distance = position_quad.distance(camera.getPosition());
+
+      for (int i = 1; i < this.baseLOD; i+=i)
+      {
+        if (distance <= RADIUS * i && current.getLOD() >= i)
+        {
+          current.subdivide();
+        }
+        else if (parent != null && distance_parent > RADIUS * i && parent.getLOD() <= i)
+        {
+          parent.join();
+        }
+      }
+    }
   }
 
   public Terrain(String map)
   {
-    this.shader = new Shader("terrain");
-    this.size = 4;
-    this.chunks = new TerrainChunk[this.size * this.size];
+    int size = 256 + 1;
+    int lod = 16;
 
     try
     {
@@ -69,13 +112,15 @@ public class Terrain extends GameObject
       e.printStackTrace();
     }
 
-    for (int i = 0; i < this.size; i++)
-    {
-      for (int j = 0; j < this.size; j++)
-      {
-        this.chunks[j * this.size + i] = new TerrainChunk(this.splitHeightmap(j, i), j, i);
-        this.chunks[j * this.size + i].generate();
-      }
-    }
+    // add test chunks
+    this.root = new TerrainChunk(null, size, 0, 0, size - 1, lod);
+    this.root.subdivide();
+    this.traversed = new ArrayList<>();
+
+    this.shader = new Shader("terrain");
+    this.vao = TerrainGenerator.generate(this.heightmap, size);
+    this.size = size;
+    this.baseLOD = lod;
   }
+
 }

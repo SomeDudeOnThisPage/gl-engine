@@ -1,153 +1,177 @@
 package engine.terrain;
 
-import engine.core.gfx.VertexArray;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
-public class TerrainChunk
+public class TerrainChunk extends Node
 {
-  private enum MODE { INTERLEAVED, STATIC }
+  private int x, y;
+  private int lod;
+  private int size;
+  private int mapSize;
+  public Vector3f color;
+  public int[] indices;
 
-  private static final int SIZE = 16;
-  private static final int MAX_COLOR = 255 * 255 * 255;
-  private static final float amplitude = 5.0f;
+  private TerrainChunk[] neighbors;
 
-  private VertexArray vao;
-  private BufferedImage heightmap;
-  private Vector2f position;
-
-  private float getHeight(int x, int z)
+  public int[] getIndices()
   {
-    if (x >= heightmap.getHeight() || z >= heightmap.getHeight())
-    {
-      return 0.0f;
-    }
-
-    float height = this.heightmap.getRGB(x, z) / (float) MAX_COLOR;
-    height += 1.0f/2.0f;
-    height /= 1.0f/2.0f;
-    height *= 1.0f/2.0f;
-    return height * amplitude;
+    return this.indices;
   }
 
   /**
-   * Creates a mesh for the chunk based on a level of detail or something.
+   * Finds a neighbor of greater or equal size in a given direction.
+   * @param direction 0 = north, 1 = east, 2 = south, 3 = west
+   * @return neighbor
    */
-  public VertexArray generate()
+  public TerrainChunk findGreaterNeighbor(int direction)
   {
-    float[] vertices = new float[TerrainChunk.SIZE * TerrainChunk.SIZE * 6 * 3];
-    float[] normals = new float[TerrainChunk.SIZE * TerrainChunk.SIZE * 6 * 3];
+    // root
+    if (this.getParent() == null) { return null; }
 
-    int v = 0;
-    int n = 0;
-    Vector3f v1, v2, v3, v4, v5, v6;
+    // check parents' children
+    TerrainChunk parent = (TerrainChunk) this.getParent();
+    ArrayList<Node> parentChildren = (ArrayList<Node>) parent.getChildren();
 
-    for (int i = 0; i < TerrainChunk.SIZE; i++)
+    if (direction == 0) // north
     {
-      for (int j = 0; j < TerrainChunk.SIZE; j++)
-      {
-        if (j % 2 == 0)
-        {
-          v1 = new Vector3f((float) i, this.getHeight(i, j), (float) j);
-          v2 = new Vector3f((float) i + 1, this.getHeight(i + 1, j), (float) j);
-          v3 = new Vector3f((float) i + 1, this.getHeight(i + 1, j + 1), (float) j + 1);
-          v4 = new Vector3f((float) i, this.getHeight(i, j), (float) j);
-          v5 = new Vector3f((float) i + 1, this.getHeight(i + 1, j + 1), (float) j + 1);
-          v6 = new Vector3f((float) i, this.getHeight(i, j + 1), (float) j + 1);
-        }
-        else
-        {
-          v1 = new Vector3f((float) i, this.getHeight(i, j), (float) j);
-          v2 = new Vector3f((float) i + 1, this.getHeight(i + 1, j + 1), (float) j + 1);
-          v3 = new Vector3f((float) i, this.getHeight(i, j + 1), (float) j + 1);
-          v4 = new Vector3f((float) i, this.getHeight(i, j), (float) j);
-          v5 = new Vector3f((float) i + 1, this.getHeight(i + 1, j), (float) j);
-          v6 = new Vector3f((float) i + 1, this.getHeight(i + 1, j + 1), (float) j + 1);
-        }
+      // check if we're in the same quad
+      if (parentChildren.get(2) == this) { return (TerrainChunk) parentChildren.get(0); }
+      if (parentChildren.get(3) == this) { return (TerrainChunk) parentChildren.get(1); }
 
-        // first triangle vertices
-        vertices[v++] = v1.x;
-        vertices[v++] = v1.y;
-        vertices[v++] = v1.z;
+      // if not, go up one parent
+      TerrainChunk chunk = parent.findGreaterNeighbor(direction);
+      if (chunk == null || !chunk.subdivided()) { return chunk; }
 
-        vertices[v++] = v2.x;
-        vertices[v++] = v2.y;
-        vertices[v++] = v2.z;
+      if (parentChildren.get(0) == this) { return (TerrainChunk) chunk.getChildren().get(2); }
+      if (parentChildren.get(1) == this) { return (TerrainChunk) chunk.getChildren().get(3); }
+    }
+    else if (direction == 1) // east
+    {
+      // check if we're in the same quad
+      if (parentChildren.get(0) == this) { return (TerrainChunk) parentChildren.get(1); }
+      if (parentChildren.get(2) == this) { return (TerrainChunk) parentChildren.get(3); }
 
-        vertices[v++] = v3.x;
-        vertices[v++] = v3.y;
-        vertices[v++] = v3.z;
+      // if not, go up one parent
+      TerrainChunk chunk = parent.findGreaterNeighbor(direction);
+      if (chunk == null || !chunk.subdivided()) { return chunk; }
 
-        // first triangle normals
-        Vector3f vec1 = v2.sub(v1);
-        Vector3f vec2 = v3.sub(v1);
-        Vector3f normal = vec1.cross(vec2);
+      if (parentChildren.get(1) == this) { return (TerrainChunk) chunk.getChildren().get(0); }
+      if (parentChildren.get(3) == this) { return (TerrainChunk) chunk.getChildren().get(2); }
+    }
+    else if (direction == 2) // south
+    {
+      // check if we're in the same quad
+      if (parentChildren.get(0) == this) { return (TerrainChunk) parentChildren.get(2); }
+      if (parentChildren.get(1) == this) { return (TerrainChunk) parentChildren.get(3); }
 
-        normals[n++] = -normal.x;
-        normals[n++] = -normal.y;
-        normals[n++] = -normal.z;
+      // if not, go up one parent
+      TerrainChunk chunk = parent.findGreaterNeighbor(direction);
+      if (chunk == null || !chunk.subdivided()) { return chunk; }
 
-        normals[n++] = -normal.x;
-        normals[n++] = -normal.y;
-        normals[n++] = -normal.z;
+      if (parentChildren.get(2) == this) { return (TerrainChunk) chunk.getChildren().get(0); }
+      if (parentChildren.get(3) == this) { return (TerrainChunk) chunk.getChildren().get(1); }
+    }
+    else if (direction == 3) // west
+    {
+      // check if we're in the same quad
+      if (parentChildren.get(1) == this) { return (TerrainChunk) parentChildren.get(0); }
+      if (parentChildren.get(3) == this) { return (TerrainChunk) parentChildren.get(2); }
 
-        normals[n++] = -normal.x;
-        normals[n++] = -normal.y;
-        normals[n++] = -normal.z;
+      // if not, go up one parent
+      TerrainChunk chunk = parent.findGreaterNeighbor(direction);
+      if (chunk == null || !chunk.subdivided()) { return chunk; }
 
-        // second triangle vertices
-        vertices[v++] = v4.x;
-        vertices[v++] = v4.y;
-        vertices[v++] = v4.z;
-
-        vertices[v++] = v5.x;
-        vertices[v++] = v5.y;
-        vertices[v++] = v5.z;
-
-        vertices[v++] = v6.x;
-        vertices[v++] = v6.y;
-        vertices[v++] = v6.z;
-
-        // second triangle normals
-        Vector3f vec3 = v5.sub(v4);
-        Vector3f vec4 = v6.sub(v4);
-        Vector3f normal2 = vec3.cross(vec4);
-
-        normals[n++] = -normal2.x;
-        normals[n++] = -normal2.y;
-        normals[n++] = -normal2.z;
-
-        normals[n++] = -normal2.x;
-        normals[n++] = -normal2.y;
-        normals[n++] = -normal2.z;
-
-        normals[n++] = -normal2.x;
-        normals[n++] = -normal2.y;
-        normals[n++] = -normal2.z;
-      }
+      if (parentChildren.get(0) == this) { return (TerrainChunk) chunk.getChildren().get(1); }
+      if (parentChildren.get(2) == this) { return (TerrainChunk) chunk.getChildren().get(3); }
     }
 
-    this.vao.addAttribute(0, 3, vertices);
-    this.vao.addAttribute(1, 3, normals);
-    return this.vao;
+    return null;
   }
 
-  public VertexArray getVAO()
+  public void generateIndices()
   {
-    return this.vao;
+    if (!this.subdivided())
+    {
+      this.indices = TerrainGenerator.generateIndices(this.mapSize, this.x, this.y, this.size, this.lod, this);
+    }
+    else
+    {
+      for (int i = 0; i < 4; i++)
+      {
+        ((TerrainChunk) this.getChildren().get(i)).generateIndices();
+      }
+    }
   }
 
-  public Vector2f getPosition()
+  public void subdivide()
   {
-    return this.position;
+    int half = (this.size) / 2;
+    if (this.lod > 1 && this.getChildren().size() == 0)
+    {
+      // create four children chunks
+      TerrainChunk nw = new TerrainChunk(this, this.mapSize, this.x, this.y, half, this.lod / 2);
+      TerrainChunk ne = new TerrainChunk(this, this.mapSize, this.x + half, this.y, half, this.lod / 2);
+      TerrainChunk sw = new TerrainChunk(this, this.mapSize, this.x, this.y + half, half, this.lod / 2);
+      TerrainChunk se = new TerrainChunk(this, this.mapSize, this.x + half, this.y + half, half, this.lod / 2);
+
+      this.add(nw);
+      this.add(ne);
+      this.add(sw);
+      this.add(se);
+
+      for (int i = 0; i < 4; i++)
+      {
+        TerrainChunk chunk = (TerrainChunk) this.getChildren().get(i);
+        chunk.generateIndices();
+        for (int j = 0; j < 4; j++)
+        {
+          TerrainChunk neighbor = chunk.findGreaterNeighbor(j);
+          if (neighbor != null)
+          {
+            neighbor.generateIndices();
+          }
+        }
+      }
+    }
   }
 
-  public TerrainChunk(BufferedImage heightmap, int x, int y)
+  public void join()
   {
-    this.vao = new VertexArray();
-    this.position = new Vector2f(x * TerrainChunk.SIZE, y * TerrainChunk.SIZE);
-    this.heightmap = heightmap;
+    this.getChildren().clear();
+    for (int j = 0; j < 4; j++)
+    {
+      TerrainChunk neighbor = this.findGreaterNeighbor(j);
+      if (neighbor != null)
+      {
+        neighbor.generateIndices();
+      }
+    }
+  }
+
+  public int getLOD()
+  {
+    return this.lod;
+  }
+
+  public int getX() { return this.x; }
+  public int getY() { return this.y; }
+
+  public Vector2f getCenter()
+  {
+    return new Vector2f(this.x + this.size / 2.0f, this.y + this.size / 2.0f);
+  }
+
+  public TerrainChunk(TerrainChunk parent, int mapSize, int x, int y, int size, int lod)
+  {
+    this.parent = parent;
+    this.size = size;
+    this.mapSize = mapSize;
+    this.lod = lod;
+    this.x = x;
+    this.y = y;
+    this.color = new Vector3f((float) Math.random(), (float) Math.random(), (float) Math.random());
   }
 }

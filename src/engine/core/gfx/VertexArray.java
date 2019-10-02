@@ -10,7 +10,7 @@ public class VertexArray
   /**
    * Maximum number of attributes, ranging from 0 to MAX_ATTRIBUTES - 1.
    */
-  private static final int MAX_ATTRIBUTES = 8;
+  protected static final int MAX_ATTRIBUTES = 8;
 
   /**
    * Currently enabled vertex array, so we do not accidentally enable the already bound vertex array again.
@@ -25,12 +25,12 @@ public class VertexArray
   /**
    * Amount of vertices to be rendered. Set when setting attribute 0.
    */
-  private int vcount;
+  public int vcount;
 
   /**
    Enabled attributes for this vertex array.
    */
-  private boolean[] attributes;
+  protected boolean[] attributes;
 
   /**
    * Stores the indices of the loaded VertexBufferObjects used by this VertexArray
@@ -40,7 +40,7 @@ public class VertexArray
   /**
    * Numerical ID of the index buffer.<br>If indexing is not used, this will be -1.
    */
-  private int indices;
+  protected int indices;
 
   /**
    * Bind the vertex array and enable all attribute arrays used.
@@ -114,6 +114,25 @@ public class VertexArray
     this.indices = glGenBuffers();
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.indices);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    unbind();
+  }
+
+  public void setIndices(int[] indices)
+  {
+    this.vcount = indices.length;
+
+    bind();
+
+    if (this.indices == -1)
+    {
+      this.indices = glGenBuffers();
+    }
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.indices);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STREAM_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 

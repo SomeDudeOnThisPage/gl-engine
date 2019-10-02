@@ -1,11 +1,12 @@
 package engine;
 
 import engine.core.*;
+import engine.core.scene.Scene;
 import engine.util.Window;
 
 public class Engine
 {
-  private static final Window window = new Window();
+  public static final Window window = new Window();
 
   private void loop()
   {

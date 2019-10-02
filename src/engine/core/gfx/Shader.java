@@ -1,10 +1,13 @@
 package engine.core.gfx;
 
+import engine.core.Camera;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
@@ -12,6 +15,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL32C.GL_GEOMETRY_SHADER;
 
 public class Shader
 {
@@ -51,6 +55,14 @@ public class Shader
   public static ArrayList<Shader> getLoaded()
   {
     return loaded;
+  }
+
+  public void setCamera(Camera camera)
+  {
+    if (camera.shouldClip()) { this.setUniform("clip", camera.getClippingPlane()); }
+    this.setUniform("projection", camera.getProjection());
+    this.setUniform("view", camera.getView());
+    this.setUniform("view_position", camera.getPosition());
   }
 
   public void setUniform(String name, Matrix4f data)
@@ -112,6 +124,19 @@ public class Shader
     unbind();
   }
 
+  public void setUniform(String name, Vector4f data)
+  {
+    bind();
+
+    FloatBuffer buffer = BufferUtils.createFloatBuffer(4);
+    data.get(buffer);
+
+    int location = glGetUniformLocation(program, name);
+    glUniform4fv(location, buffer);
+
+    unbind();
+  }
+
   public void bind()
   {
     glUseProgram(program);
@@ -126,11 +151,32 @@ public class Shader
   {
     program = glCreateProgram();
 
-    int vshader = Shader.load(GL_VERTEX_SHADER, name + ".vs");
-    int fshader = Shader.load(GL_FRAGMENT_SHADER, name + ".fs");
+    if (new File("resources/shaders/" + name + ".vs").exists())
+    {
+      int vshader = Shader.load(GL_VERTEX_SHADER, name + ".vs");
+      glAttachShader(program, vshader);
+    }
+    else
+    {
+      System.err.println("error loading shader " + name + " (no vertex shader (\'.vs\') file found)");
+    }
 
-    glAttachShader(program, vshader);
-    glAttachShader(program, fshader);
+    if (new File("resources/shaders/" + name + ".gs").exists())
+    {
+      int gshader = Shader.load(GL_GEOMETRY_SHADER, name + ".gs");
+      glAttachShader(program, gshader);
+    }
+
+    if (new File("resources/shaders/" + name + ".fs").exists())
+    {
+      int fshader = Shader.load(GL_FRAGMENT_SHADER, name + ".fs");
+      glAttachShader(program, fshader);
+    }
+    else
+    {
+      System.err.println("error loading shader " + name + " (no fragment shader (\'.fs\') file found)");
+    }
+
     glLinkProgram(program);
 
     loaded.add(this);

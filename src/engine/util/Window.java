@@ -6,10 +6,6 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13C.GL_MULTISAMPLE;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-import org.lwjgl.glfw.GLFWWindowSizeCallback;
-import org.lwjgl.glfw.GLFWWindowSizeCallbackI;
-import org.lwjgl.opengl.GLCapabilities;
-
 public class Window
 {
   private long window;
@@ -70,7 +66,7 @@ public class Window
     glfwSwapInterval(1);
     createCapabilities();
 
-    glClearColor(0.01f, 0.01f, 0.01f, 1.0f);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
     glEnable(GL_MULTISAMPLE);
 
