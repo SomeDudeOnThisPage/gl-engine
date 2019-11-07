@@ -42,6 +42,11 @@ public class VertexArray
    */
   protected int indices;
 
+  public static void terminate()
+  {
+
+  }
+
   /**
    * Bind the vertex array and enable all attribute arrays used.
    */

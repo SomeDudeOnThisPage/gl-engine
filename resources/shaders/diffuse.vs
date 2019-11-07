@@ -3,6 +3,7 @@
 layout (location = 0) in vec3 v_position;
 layout (location = 1) in vec2 v_texture;
 layout (location = 2) in vec3 v_normal;
+// layout (location = 3) in vec3 v_tangent; // normal map tangents
 
 out vec2 fs_texture;
 out vec3 fs_normal;

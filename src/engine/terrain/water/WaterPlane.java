@@ -1,7 +1,8 @@
-package engine.terrain;
+package engine.terrain.water;
 
-import engine.core.Camera;
-import engine.core.scene.GameObject;
+import engine.core.scene.prefabs3D.Camera3D;
+import engine.core.entity.Entity;
+import engine.core.entity.component.FPSCameraMovementComponent;
 import engine.core.scene.Scene;
 import engine.core.gfx.FrameBuffer;
 import engine.core.gfx.Shader;
@@ -13,7 +14,7 @@ import org.joml.Vector4f;
 
 import java.util.ArrayList;
 
-public class WaterPlane extends GameObject
+public class WaterPlane extends Entity
 {
   private VertexArray vao;
   private Shader shader;
@@ -23,13 +24,13 @@ public class WaterPlane extends GameObject
 
   public Texture renderRefraction(Scene scene)
   {
-    ArrayList<GameObject> objects = scene.getGameObjects();
-    Camera camera = scene.getCamera();
+    ArrayList<Entity> objects = scene.getGameObjects();
+    Camera3D camera = scene.getCamera();
     camera.clip(true, new Vector4f(0.0f, -1.0f, 0.0f, 0.05f));
 
     this.refraction.bind();
 
-    for (GameObject object:objects)
+    for (Entity object:objects)
     {
       if (object.getClass() != WaterPlane.class)
       {
@@ -45,17 +46,18 @@ public class WaterPlane extends GameObject
 
   public Texture renderReflection(Scene scene)
   {
-    ArrayList<GameObject> objects = scene.getGameObjects();
-    Camera camera = scene.getCamera();
+    ArrayList<Entity> objects = scene.getGameObjects();
+    Camera3D camera = scene.getCamera();
+    FPSCameraMovementComponent cameraPosition = ((FPSCameraMovementComponent) camera.getComponent("fps_camera_movement"));
     camera.clip(true, new Vector4f(0.0f, 1.0f, 0.0f, -0.05f));
 
-    float distance = 2 * (camera.getPosition().y + 0.0f);
-    camera.getPosition().y -= distance;
+    float distance = 2 * (cameraPosition.get().y + 0.0f);
+    cameraPosition.set(cameraPosition.get().x, cameraPosition.get().y - distance, cameraPosition.get().z);
     camera.invert();
 
     this.reflection.bind();
 
-    for (GameObject object:objects)
+    for (Entity object:objects)
     {
       if (object.getClass() != WaterPlane.class)
       {
@@ -67,15 +69,16 @@ public class WaterPlane extends GameObject
     camera.unclip();
 
     camera.invert();
-    camera.getPosition().y += distance;
+    cameraPosition.set(cameraPosition.get().x, -cameraPosition.get().y + distance, cameraPosition.get().z);
+
 
     return this.reflection.getTexture();
   }
 
   @Override
-  public void render(Camera camera)
+  public void render(Camera3D camera)
   {
-    this.shader.setCamera(camera);
+    camera.bind(this.shader);
     this.shader.setUniform("model", new Matrix4f().identity().translate(this.position));
 
     this.reflection.getTexture().bind(0);
@@ -92,12 +95,6 @@ public class WaterPlane extends GameObject
 
     this.reflection.getTexture().unbind(0);
     this.reflection.getTexture().unbind(1);
-  }
-
-  @Override
-  public void update()
-  {
-
   }
 
   public FrameBuffer getReflection()

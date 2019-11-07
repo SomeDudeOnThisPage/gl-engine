@@ -1,6 +1,7 @@
 package engine.core.gfx;
 
-import engine.core.Camera;
+import engine.core.scene.Camera;
+import engine.core.scene.prefabs3D.Camera3D;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -20,9 +21,6 @@ import static org.lwjgl.opengl.GL32C.GL_GEOMETRY_SHADER;
 public class Shader
 {
   private static ArrayList<Shader> loaded = new ArrayList<>();
-  private static int bound = 0;
-
-  private Matrix4f pr_matrix;
   private int program;
 
   private static int load(int type, String name)
@@ -55,14 +53,6 @@ public class Shader
   public static ArrayList<Shader> getLoaded()
   {
     return loaded;
-  }
-
-  public void setCamera(Camera camera)
-  {
-    if (camera.shouldClip()) { this.setUniform("clip", camera.getClippingPlane()); }
-    this.setUniform("projection", camera.getProjection());
-    this.setUniform("view", camera.getView());
-    this.setUniform("view_position", camera.getPosition());
   }
 
   public void setUniform(String name, Matrix4f data)

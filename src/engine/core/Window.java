@@ -1,4 +1,4 @@
-package engine.util;
+package engine.core;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL.createCapabilities;
@@ -35,6 +35,10 @@ public class Window
   public void update()
   {
     glfwSwapBuffers(window);
+  }
+
+  public void clear()
+  {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
@@ -63,10 +67,10 @@ public class Window
     });
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     createCapabilities();
 
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     glEnable(GL_MULTISAMPLE);
 

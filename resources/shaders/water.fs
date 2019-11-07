@@ -21,7 +21,8 @@ float fresnel()
   return clamp(factor, 0.0, 1.0);
 }
 
-vec2 clipSpaceToTexCoords(vec4 clipSpace){
+vec2 clipSpaceToTexCoords(vec4 clipSpace)
+{
   vec2 ndc = (clipSpace.xy / clipSpace.w);
   vec2 texCoords = ndc / 2.0 + 0.5;
   return texCoords;
@@ -34,7 +35,7 @@ void main()
 
   float depth = texture(depth_map, refraction_texture).r;
   float near = 0.1;
-  float far = 100.0f;
+  float far = 100.0f; // todo: bug bug bug bug bug bug bug
   float depth_distance = 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
 
   depth = gl_FragCoord.z;

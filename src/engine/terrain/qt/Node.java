@@ -1,4 +1,4 @@
-package engine.terrain;
+package engine.terrain.qt;
 
 import java.util.ArrayList;
 import java.util.List;

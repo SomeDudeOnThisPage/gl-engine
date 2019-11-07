@@ -9,7 +9,7 @@ import org.joml.Vector2f;
  */
 public class StringMeshBuilder
 {
-  private static final float TEXT_SPACING = 0.1f;
+  private static final float TEXT_SPACING = 0.01f;
 
   /**
    * Generates a mesh from a given string, scale and font and sets the given VAOs' information accordingly.
@@ -43,14 +43,12 @@ public class StringMeshBuilder
       textureCoordinates[ct] = charTexture.x;
       textureCoordinates[ct + 1] = charTexture.y;
 
-      System.out.println(charTexture.x + " " + charTexture.y);
-
       cp += 3;
       ct += 2;
 
       if (i < text.length() - 1)
       {
-        pos += font.getCharOffset(current) / 2 + TEXT_SPACING * BitmapFont.BMP_FONT_SCALE;
+        pos += font.getCharOffset(current) / 2 + TEXT_SPACING * font.getScale();
       }
     }
 

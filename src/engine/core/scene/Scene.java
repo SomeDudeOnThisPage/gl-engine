@@ -1,48 +1,64 @@
 package engine.core.scene;
 
-import engine.core.Camera;
+import engine.core.scene.prefabs3D.Camera3D;
+import engine.core.entity.Entity;
 
 import java.util.ArrayList;
 
 public abstract class Scene
 {
-  private ArrayList<GameObject> objects = new ArrayList<>();
-  protected Camera camera = new Camera();
+  private ArrayList<Entity> objects = new ArrayList<>();
+  protected Camera3D camera = new Camera3D();
+  private boolean fin = false;
 
-  public void add(GameObject object)
+  public void add(Entity object)
   {
     objects.add(object);
     object.setScene(this);
   }
 
-  public Camera getCamera()
+  public Camera3D getCamera()
   {
     return this.camera;
   }
 
-  public ArrayList<GameObject> getGameObjects()
+  public ArrayList<Entity> getGameObjects()
   {
     return this.objects;
   }
 
   public void render()
   {
-    for (GameObject object:this.objects)
+    for (Entity object:this.objects)
     {
       object.render(this.camera);
     }
   }
 
-  public void updateObjects()
+  public void updateObjects(int dt)
   {
-    for (GameObject object:this.objects)
+    for (Entity object:this.objects)
     {
-      object.update();
+      object.updateComponents(dt);
     }
-
-    this.camera.update();
+    this.camera.updateComponents(dt);
   }
 
-  public abstract void update();
-  public abstract void initialize();
+  public boolean finished()
+  {
+    return fin;
+  }
+
+  public void finish()
+  {
+    this.fin = true;
+  }
+
+  public abstract void update(int dt);
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Hooks
+  ///////////////////////////////////////////////////////////////////////////
+  public /* abstract */ void onEnter() {}
+  public /* abstract */ void onExit() {}
 }

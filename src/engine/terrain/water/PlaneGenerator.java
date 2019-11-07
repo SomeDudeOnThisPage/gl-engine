@@ -1,4 +1,4 @@
-package engine.terrain;
+package engine.terrain.water;
 
 import engine.core.gfx.VertexArray;
 import org.joml.Vector3f;

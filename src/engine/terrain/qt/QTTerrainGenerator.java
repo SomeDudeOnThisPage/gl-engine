@@ -1,10 +1,10 @@
-package engine.terrain;
+package engine.terrain.qt;
 
 import engine.core.gfx.VertexArray;
 
 import java.awt.image.BufferedImage;
 
-public class TerrainGenerator
+public class QTTerrainGenerator
 {
   private static final float COLOR_MAX = 255.0f * 255.0f * 255.0f;
 
@@ -38,14 +38,14 @@ public class TerrainGenerator
    * @param lod lod-level
    * @return integer indices array
    */
-  public static int[] generateIndices(int mapSize, int ox, int oy, int size, int lod, TerrainChunk chunk)
+  public static int[] generateIndices(int mapSize, int ox, int oy, int size, int lod, QTTerrainChunk chunk)
   {
     int[] indices = new int[(size) * (size) * 6 / lod / lod + size * 3];
 
-    TerrainChunk c_north = chunk.findGreaterNeighbor(0);
-    TerrainChunk c_east = chunk.findGreaterNeighbor(1);
-    TerrainChunk c_south = chunk.findGreaterNeighbor(2);
-    TerrainChunk c_west = chunk.findGreaterNeighbor(3);
+    QTTerrainChunk c_north = chunk.findGreaterNeighbor(0);
+    QTTerrainChunk c_east = chunk.findGreaterNeighbor(1);
+    QTTerrainChunk c_south = chunk.findGreaterNeighbor(2);
+    QTTerrainChunk c_west = chunk.findGreaterNeighbor(3);
 
     int i = 0;
     for (int z = oy; z < size + oy; z+=lod)
@@ -221,25 +221,13 @@ public class TerrainGenerator
         }
         else
         {
-          if (x % (2 * lod) == 0)
-          {
-            // add sub-collection of indices to a buffer
-            indices[i++] = tl;
-            indices[i++] = bl;
-            indices[i++] = br;
-            indices[i++] = tl;
-            indices[i++] = br;
-            indices[i++] = tr;
-          }
-          else
-          {
-            indices[i++] = tl;
-            indices[i++] = bl;
-            indices[i++] = tr;
-            indices[i++] = tr;
-            indices[i++] = bl;
-            indices[i++] = br;
-          }
+          // add sub-collection of indices to a buffer
+          indices[i++] = tl;
+          indices[i++] = bl;
+          indices[i++] = br;
+          indices[i++] = tl;
+          indices[i++] = br;
+          indices[i++] = tr;
         }
       }
     }

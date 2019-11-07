@@ -17,5 +17,5 @@ void main()
   vec3 diffuse = max(dot(normalize(fs_normal), light_direction), 0.0f) * light_color;
   diffuse = clamp(diffuse, 0.0, 1.0);
 
-  gl_FragColor = vec4(light_ambient + diffuse, 1.0f) * vec4(1.0f);//vec4(col, 1.0f);//
+  gl_FragColor = vec4(col, 1.0f);//
 }

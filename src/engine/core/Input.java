@@ -1,9 +1,6 @@
 package engine.core;
 
-import engine.util.Window;
 import org.joml.Vector2d;
-import org.lwjgl.BufferUtils;
-import java.nio.DoubleBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -42,15 +39,25 @@ public class Input
     });
   }
 
+  /**
+   * Called from the render thread (as it holds the window context).
+   */
   public static void update()
   {
-    mouseLast = mouseNow;
     glfwPollEvents();
   }
 
   /**
+   * Called from the update thread.
+   */
+  public static void reset()
+  {
+    mouseLast = mouseNow;
+  }
+
+  /**
    * Returns the difference on the x- and y-axis from the last frame.
-   * @return 2-Component vector. The first component is the difference on the x-axis, the second component is the position  is the difference on the y-axis
+   * @return 2-Component vector. The first component is the difference on the x-axis, the second component is the position is the difference on the y-axis
    */
   public static Vector2d getDrag()
   {

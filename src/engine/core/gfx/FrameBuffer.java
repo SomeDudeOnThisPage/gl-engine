@@ -13,6 +13,11 @@ public class FrameBuffer
   private Texture depthTexture;
   private int depthBuffer;
 
+  public static void terminate()
+  {
+    // todo: delete cached framebuffers
+  }
+
   public Texture getTexture() { return this.texture; }
   public Texture getDepthTexture() { return this.depthTexture; }
 
